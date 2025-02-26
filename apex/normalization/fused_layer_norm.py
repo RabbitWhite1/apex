@@ -11,6 +11,8 @@ from apex._autocast_utils import _cast_if_autocast_enabled
 
 global fused_layer_norm_cuda
 fused_layer_norm_cuda = None
+if fused_layer_norm_cuda is None:
+    fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
 
 
 # PyTorch supports `torch.library.custom_op` since 2.4.0.
@@ -38,9 +40,6 @@ def manual_rms_norm(input, normalized_shape, weight, eps):
 class FusedLayerNormAffineFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input, weight, bias, normalized_shape, eps, memory_efficient=False):
-        global fused_layer_norm_cuda
-        if fused_layer_norm_cuda is None:
-            fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
         ctx.normalized_shape = normalized_shape
         ctx.eps = eps
         ctx.memory_efficient = memory_efficient
@@ -78,10 +77,6 @@ if supports_custom_op():
         eps: float,
         memory_efficient: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        global fused_layer_norm_cuda
-        if fused_layer_norm_cuda is None:
-            fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
-
         input_ = input.contiguous()
         weight_ = weight.contiguous()
         bias_ = bias.contiguous()
@@ -195,9 +190,6 @@ if supports_custom_op():
 class FusedRMSNormAffineFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input, weight, normalized_shape, eps, memory_efficient=False):
-        global fused_layer_norm_cuda
-        if fused_layer_norm_cuda is None:
-            fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
         ctx.normalized_shape = normalized_shape
         ctx.eps = eps
         ctx.memory_efficient = memory_efficient
@@ -230,10 +222,6 @@ if supports_custom_op():
         eps: float,
         memory_efficient: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        global fused_layer_norm_cuda
-        if fused_layer_norm_cuda is None:
-            fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
-
         input_ = input.contiguous()
         weight_ = weight.contiguous()
         output, invvar = fused_layer_norm_cuda.rms_forward_affine(
@@ -348,9 +336,6 @@ class FusedLayerNormAffineMixedDtypesFunction(FusedLayerNormAffineFunction):
 
     @staticmethod
     def forward(ctx, input, weight, bias, normalized_shape, eps, memory_efficient=False):
-        global fused_layer_norm_cuda
-        if fused_layer_norm_cuda is None:
-            fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
         ctx.normalized_shape = normalized_shape
         ctx.eps = eps
         ctx.memory_efficient = memory_efficient
@@ -371,9 +356,6 @@ class FusedRMSNormAffineMixedDtypesFunction(FusedRMSNormAffineFunction):
 
     @staticmethod
     def forward(ctx, input, weight, normalized_shape, eps, memory_efficient=False):
-        global fused_layer_norm_cuda
-        if fused_layer_norm_cuda is None:
-            fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
         ctx.normalized_shape = normalized_shape
         ctx.eps = eps
         ctx.memory_efficient = memory_efficient
@@ -392,9 +374,6 @@ class FusedRMSNormAffineMixedDtypesFunction(FusedRMSNormAffineFunction):
 class FusedLayerNormFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input, normalized_shape, eps, memory_efficient=False):
-        global fused_layer_norm_cuda
-        if fused_layer_norm_cuda is None:
-            fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
         ctx.normalized_shape = normalized_shape
         ctx.eps = eps
         ctx.memory_efficient = memory_efficient
@@ -425,10 +404,6 @@ if supports_custom_op():
         eps: float,
         memory_efficient: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        global fused_layer_norm_cuda
-        if fused_layer_norm_cuda is None:
-            fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
-
         input_ = input.contiguous()
         output, mean, invvar = fused_layer_norm_cuda.forward(
             input_, normalized_shape, eps
@@ -523,9 +498,6 @@ if supports_custom_op():
 class FusedRMSNormFunction(torch.autograd.Function):
     @staticmethod
     def forward(ctx, input, normalized_shape, eps, memory_efficient=False):
-        global fused_layer_norm_cuda
-        if fused_layer_norm_cuda is None:
-            fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
         ctx.normalized_shape = normalized_shape
         ctx.eps = eps
         ctx.memory_efficient = memory_efficient
@@ -556,10 +528,6 @@ if supports_custom_op():
         eps: float,
         memory_efficient: bool = False,
     ) -> Tuple[torch.Tensor, torch.Tensor]:
-        global fused_layer_norm_cuda
-        if fused_layer_norm_cuda is None:
-            fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
-
         input_ = input.contiguous()
         output, invvar = fused_layer_norm_cuda.rms_forward(
             input_, normalized_shape, eps
@@ -772,9 +740,6 @@ class FusedLayerNorm(torch.nn.Module):
     def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True, memory_efficient=False):
         super().__init__()
 
-        global fused_layer_norm_cuda
-        fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
-
         if isinstance(normalized_shape, numbers.Integral):
             normalized_shape = (normalized_shape,)
         self.normalized_shape = torch.Size(normalized_shape)
@@ -870,9 +835,6 @@ class FusedRMSNorm(torch.nn.Module):
 
     def __init__(self, normalized_shape, eps=1e-5, elementwise_affine=True, memory_efficient=False):
         super().__init__()
-
-        global fused_layer_norm_cuda
-        fused_layer_norm_cuda = importlib.import_module("fused_layer_norm_cuda")
 
         if isinstance(normalized_shape, numbers.Integral):
             normalized_shape = (normalized_shape,)
